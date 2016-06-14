@@ -196,7 +196,8 @@ void fifo_push(instance *inst, fifo *f, uint8_t *data)
 size_t fifo_pop(instance *inst, fifo *f, uint8_t *data)
 {
 	if (f->n_elems) {
-		memcpy(data, &f->buffer[_INDEX(f->i_head)], inst->settings.bytes_per_elem);
+		if (data)
+			memcpy(data, &f->buffer[_INDEX(f->i_head)], inst->settings.bytes_per_elem);
 	}
 	else {
 		return 0;
@@ -661,6 +662,16 @@ ANYSPI_rc_t ANYSPI_IRQHandler(void)
 
 	return ANYSPI_OK;
 }
+
+/* checks if line is idle */
+ANYSPI_rc_t ANYSPI_IsIdle(ANYSPI_InstanceHandle hInst)
+{
+	if (INST->status == SPI_STAT_IDLE)
+		return ANYSPI_IDLE;
+	else
+		return ANYSPI_TX_IN_PROGRESS;
+}
+
 /* ------------------------------------------------------------------------------------------ */
 
 int handle2index(ANYSPI_InstanceHandle hInst)

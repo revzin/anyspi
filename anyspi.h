@@ -30,6 +30,7 @@ SOFTWARE.
 #define ANYSPI_MORE_SECURE
 
 #include <stddef.h> /* size_t */
+#include <stdint.h>
 
 #ifndef ANYSPI_MAX_INSTANCES
 #define ANYSPI_MAX_INSTANCES (3)
@@ -47,7 +48,8 @@ typedef enum {
 	ANYSPI_BAD_HANDLE,
 	ANYSPI_INIT_NOT_DONE,
 	ANYSPI_ALREADY_INITED,
-	ANYSPI_TX_IN_PROGRESS
+	ANYSPI_TX_IN_PROGRESS,
+	ANYSPI_IDLE
 } ANYSPI_rc_t;
 
 typedef enum {
@@ -82,7 +84,7 @@ typedef enum {
 
 typedef struct {
 	void *port_address;
-	uint32_t number;
+	int number;
 } ANYSPI_pin;
 
 typedef ANYSPI_bit_t 	(*ANYSPI_fPinRead)
@@ -146,6 +148,9 @@ ANYSPI_rc_t ANYSPI_PopRx(ANYSPI_InstanceHandle hInst, uint8_t *data_out);
 
 /* starts transmission */
 ANYSPI_rc_t ANYSPI_Start(ANYSPI_InstanceHandle hInst);
+
+/* checks if line is idle */
+ANYSPI_rc_t ANYSPI_IsIdle(ANYSPI_InstanceHandle hInst);
 
 /* updates settings */
 ANYSPI_rc_t ANYSPI_UpdateSettings(ANYSPI_InstanceHandle hInst, ANYSPI_settings *settings);
