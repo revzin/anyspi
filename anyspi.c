@@ -77,6 +77,8 @@ typedef struct {
 
 	int								counter; /* internal cycle delay counter */
 
+	int								ignore_next_bit;
+
 	volatile instance_lock_t 		lock;
 }  instance;
 
@@ -369,16 +371,19 @@ ANYSPI_bit_t miso_read(instance *inst)
 
 void pin_hi(instance *inst, ANYSPI_pin *pin)
 {
-	inst->settings.pin_write(inst, pin, BITVAL_ONE);
+	if (!pin->disabled)
+		inst->settings.pin_write(inst, pin, BITVAL_ONE);
 }
 
 void pin_lo(instance *inst, ANYSPI_pin *pin)
 {
-	inst->settings.pin_write(inst, pin, BITVAL_ZERO);
+	if (!pin->disabled)
+		inst->settings.pin_write(inst, pin, BITVAL_ZERO);
 }
 
 ANYSPI_bit_t pin_read(instance *inst, ANYSPI_pin *pin)
 {
+	assert(!pin->disabled);
 	return inst->settings.pin_read(inst, pin);
 }
 
@@ -762,6 +767,11 @@ ANYSPI_rc_t instance_step(instance *inst)
 			mosi_set_framedata(inst);
 			cs_lo(inst);
 
+			if (inst->settings.ignore_1st)
+				inst->ignore_next_bit = 1;
+			else
+				inst->ignore_next_bit = 0;
+
 			inst->status = SPI_STAT_TRAILING_EDGE;
 
 			break;
@@ -771,7 +781,8 @@ ANYSPI_rc_t instance_step(instance *inst)
 		{
 			ck_toggle(inst);
 
-			inst->frmi.frame_data[inst->frame_position] = miso_read(inst);
+			if (!inst->ignore_next_bit)
+				inst->frmi.frame_data[inst->frame_position] = miso_read(inst);
 
 			inst->status = SPI_STAT_LEADING_EDGE;
 
@@ -781,10 +792,14 @@ ANYSPI_rc_t instance_step(instance *inst)
 		{
 			ck_toggle(inst);
 
-			if (inst->settings.bit_order == ANYSPI_LSB_FIRST)
-				inst->frame_position--;
+			if (!inst->ignore_next_bit) {
+				if (inst->settings.bit_order == ANYSPI_LSB_FIRST)
+					inst->frame_position--;
+				else
+					inst->frame_position++;
+				}
 			else
-				inst->frame_position++;
+				inst->ignore_next_bit = 0;
 
 			/* check we've sent the frame */
 			if (inst->frame_position == UINT32_MAX

@@ -82,10 +82,18 @@ typedef enum {
 	ANYSPI_CS_SUBMIT_EVERY_FRAME
 } ANYSPI_cs_submit_t;
 
+typedef enum {
+	ANYSPI_TXRX_NONMAL,
+	ANYSPI_TXRX_IGNORE_1ST_BIT
+} ANYSPI_txrx_ignore_1st_t;
+
+
 typedef struct {
 	void *port_address;
 	int number;
+	int disabled;
 } ANYSPI_pin;
+
 
 typedef ANYSPI_bit_t 	(*ANYSPI_fPinRead)
 							(ANYSPI_InstanceHandle hInst, ANYSPI_pin *pin);
@@ -125,6 +133,7 @@ typedef struct {
 	ANYSPI_CPHA cpha;
 	ANYSPI_CPOL cpol;
 	ANYSPI_cs_submit_t submit;
+	ANYSPI_txrx_ignore_1st_t ignore_1st;
 } ANYSPI_settings;
 
 /* inserts default values into the ANYSPI_settings struct */
@@ -157,6 +166,9 @@ ANYSPI_rc_t ANYSPI_UpdateSettings(ANYSPI_InstanceHandle hInst, ANYSPI_settings *
 
 /* handles the transmissions -- generally to be called from a timer IRQ handler */
 ANYSPI_rc_t ANYSPI_IRQHandler(void);
+
+/* destroys the instance */
+ANYSPI_rc_t ANYSPI_Cleanup(ANYSPI_InstanceHandle hInst);
 
 
 #endif /* __ANYSPI_H__ */
